@@ -1,0 +1,7 @@
+metric,value
+Delivered orders,96470.0
+Late deliveries (%),8.112366538820359
+Super late deliveries (%),4.365087591997512
+Mean absolute promise error (days),12.727875875704019
+Median absolute promise error (days),12.171689814814815
+Mean delay among late orders (days),9.551775917880569
