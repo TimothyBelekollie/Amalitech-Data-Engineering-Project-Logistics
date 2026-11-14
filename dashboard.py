@@ -141,23 +141,71 @@ with geo_tab:
         if geo_path.exists():
             try:
                 geo = load_geojson(str(geo_path))
-                geo_ids = {str(f.get("properties", {}).get("SIGLA")) for f in geo.get("features", [])}
-                if not set(state_visible["customer_state"]).issubset(geo_ids):
-                    st.info("Some state codes do not match the GeoJSON. Showing the state chart instead.")
+                # The supplied GeoJSON uses two-letter state codes in properties.SIGLA.
+                for feature in geo.get("features", []):
+                    properties = feature.get("properties") or {}
+                    code = properties.get("SIGLA") or feature.get("id")
+                    if code is not None:
+                        normalized_code = str(code).strip().upper()
+                        properties["SIGLA"] = normalized_code
+                        feature["id"] = normalized_code
+                        feature["properties"] = properties
+
+                geo_ids = {
+                    feature["id"] for feature in geo.get("features", [])
+                    if feature.get("id")
+                }
+                map_data = state_visible.copy()
+                map_data["customer_state"] = (
+                    map_data["customer_state"].astype("string").str.strip().str.upper()
+                )
+                unmatched = sorted(
+                    set(map_data["customer_state"].dropna()) - geo_ids
+                )
+                if unmatched:
+                    st.warning(
+                        "State codes not found in the GeoJSON: "
+                        + ", ".join(unmatched)
+                        + ". These states are omitted from the map but remain in the bar chart."
+                    )
+                map_data = map_data.loc[map_data["customer_state"].isin(geo_ids)]
+                if map_data.empty:
+                    st.info("No matching state codes are available for the map. Use the state bar chart.")
                 else:
-                    map_fig = px.choropleth(state_visible, geojson=geo, locations="customer_state",
-                        featureidkey="properties.SIGLA", color="late_rate_pct",
-                        color_continuous_scale=SCALE, hover_name="customer_state",
-                        hover_data={"orders": True, "late_orders": True, "avg_review": ":.2f", "late_rate_pct": ":.2f"},
-                        labels={"late_rate_pct": "Late rate (%)", "orders": "Delivered orders", "late_orders": "Late orders", "avg_review": "Mean review"},
-                        title="Late delivery rate across Brazil")
-                    map_fig.update_geos(fitbounds="locations", visible=False, showcountries=False, showcoastlines=False)
-                    map_fig.update_layout(coloraxis_colorbar=dict(title="Late %", thickness=13, len=0.65))
+                    map_fig = px.choropleth(
+                        map_data,
+                        geojson=geo,
+                        locations="customer_state",
+                        featureidkey="properties.SIGLA",
+                        color="late_rate_pct",
+                        color_continuous_scale=SCALE,
+                        hover_name="customer_state",
+                        hover_data={
+                            "orders": True,
+                            "late_orders": True,
+                            "avg_review": ":.2f",
+                            "late_rate_pct": ":.2f",
+                        },
+                        labels={
+                            "late_rate_pct": "Late rate (%)",
+                            "orders": "Delivered orders",
+                            "late_orders": "Late orders",
+                            "avg_review": "Mean review",
+                        },
+                        title="Late delivery rate across Brazil",
+                    )
+                    map_fig.update_geos(
+                        fitbounds="locations", visible=False,
+                        showcountries=False, showcoastlines=False
+                    )
+                    map_fig.update_layout(
+                        coloraxis_colorbar=dict(title="Late %", thickness=13, len=0.65)
+                    )
                     st.plotly_chart(chart_style(map_fig, 500), use_container_width=True)
-            except (OSError, ValueError, KeyError) as exc:
+            except (OSError, ValueError, KeyError, TypeError) as exc:
                 st.info(f"Map unavailable ({exc}). The state bar chart remains available.")
         else:
-            st.info("Add `data/brazil_states.geojson` exported from the notebook to enable the interactive Brazil map.")
+            st.info("Add `data/brazil_states.geojson` to enable the interactive Brazil map.")
     with right:
         if not state_visible.empty:
             bar = px.bar(state_visible.sort_values("late_rate_pct", ascending=False),
