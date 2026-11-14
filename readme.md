@@ -14,7 +14,7 @@ An audit of **99,441 Olist orders** identified **96,470 delivered orders with us
 - **Notebook PDF export:** [Public link to PDF export](<https://github.com/TimothyBelekollie/Amalitech-Data-Engineering-Project-Logistics/blob/main/TimothyBelekollie_Last_Mile_Logistics_Auditor.ipynb%20-%20Colab.pdf>)
 - **Interactive Streamlit dashboard:** [Last Mile Logistics Auditor](https://tbelekol-logistics.streamlit.app/)
 - **Insight presentation:** [Public link to presentation](https://docs.google.com/presentation/d/1O8Eba6xxv1QdJY8KqF0P_KT05BbH-N0X/edit?usp=sharing&ouid=105877769423016947018&rtpof=true&sd=true)
-- **Insight presentation Recording:** [Public link to presentation ](https://docs.google.com/presentation/d/1O8Eba6xxv1QdJY8KqF0P_KT05BbH-N0X/edit?usp=sharing&ouid=105877769423016947018&rtpof=true&sd=true)
+- **Insight presentation Recording:** [Public link to presentation Recording ](https://docs.google.com/presentation/d/1O8Eba6xxv1QdJY8KqF0P_KT05BbH-N0X/edit?usp=sharing&ouid=105877769423016947018&rtpof=true&sd=true)
 
 ## C. Technical Explanation
 
