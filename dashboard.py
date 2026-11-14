@@ -51,7 +51,18 @@ def load_data(path: str) -> pd.DataFrame:
 @st.cache_data(show_spinner=False)
 def load_geojson(path: str):
     with open(path, encoding="utf-8") as handle:
-        return json.load(handle)
+        geo = json.load(handle)
+
+    # Support common Brazil state GeoJSON schemas. The expected file uses SIGLA.
+    for feature in geo.get("features", []):
+        properties = feature.get("properties") or {}
+        code = next((properties[key] for key in ("SIGLA", "PK_sigla", "sigla", "uf", "UF", "abbrev")
+                     if properties.get(key)), None)
+        if code is None:
+            code = feature.get("id")
+        if code is not None:
+            feature["id"] = str(code).strip().upper()
+    return geo
 
 
 def chart_style(fig, height=430):
@@ -141,20 +152,15 @@ with geo_tab:
         if geo_path.exists():
             try:
                 geo = load_geojson(str(geo_path))
-                # The supplied GeoJSON uses two-letter state codes in properties.SIGLA.
-                for feature in geo.get("features", []):
-                    properties = feature.get("properties") or {}
-                    code = properties.get("SIGLA") or feature.get("id")
-                    if code is not None:
-                        normalized_code = str(code).strip().upper()
-                        properties["SIGLA"] = normalized_code
-                        feature["id"] = normalized_code
-                        feature["properties"] = properties
-
                 geo_ids = {
-                    feature["id"] for feature in geo.get("features", [])
-                    if feature.get("id")
+                    str(feature["id"]).strip().upper()
+                    for feature in geo.get("features", []) if feature.get("id")
                 }
+                # Show useful diagnostics if GitHub contains a different GeoJSON.
+                if not geo_ids:
+                    st.error("The GeoJSON has no recognized state identifiers.")
+                    st.write("First feature properties:",
+                             (geo.get("features") or [{}])[0].get("properties", {}))
                 map_data = state_visible.copy()
                 map_data["customer_state"] = (
                     map_data["customer_state"].astype("string").str.strip().str.upper()
@@ -170,13 +176,17 @@ with geo_tab:
                     )
                 map_data = map_data.loc[map_data["customer_state"].isin(geo_ids)]
                 if map_data.empty:
-                    st.info("No matching state codes are available for the map. Use the state bar chart.")
+                    st.error("No matching state codes are available for the map.")
+                    st.write("GeoJSON IDs:", sorted(geo_ids))
+                    st.write("Dataset IDs:", sorted(state_visible["customer_state"].dropna().astype(str).unique()))
+                    st.write("First GeoJSON properties:",
+                             (geo.get("features") or [{}])[0].get("properties", {}))
                 else:
                     map_fig = px.choropleth(
                         map_data,
                         geojson=geo,
                         locations="customer_state",
-                        featureidkey="properties.SIGLA",
+                        featureidkey="id",
                         color="late_rate_pct",
                         color_continuous_scale=SCALE,
                         hover_name="customer_state",
