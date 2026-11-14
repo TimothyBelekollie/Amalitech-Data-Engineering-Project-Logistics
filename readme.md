@@ -1,205 +1,102 @@
-# The Last Mile Logistics Auditor — AmaliTech Data Engineering Challenge
+# The Last Mile Logistics Auditor
+
+**AmaliTech Data Engineering Challenge | Olist Brazilian E-Commerce Dataset**
+**Author:Timothy Belekollie**
 
 ## A. Executive Summary
 
-An audit of **99,441 Olist orders** identified **96,470 delivered orders with usable delivery dates**, of which **8.11% arrived after the estimated date**. Delivery performance varied substantially by state: **Alagoas (23.93%)**, **Maranhão (19.67%)**, and **Piauí (15.97%)** had especially high late-delivery rates, while **Rio de Janeiro accounted for 1,664 late deliveries** and therefore merits attention for its operational volume. Customer reviews were strongly associated with delivery timeliness: average ratings fell from **4.29/5 for on-time orders** to **3.46/5 for late orders** and **1.79/5 for super-late orders**. The **12.73-day mean absolute delivery-promise error** shows that estimated and actual arrival dates often differ considerably, including for packages delivered early. Together, these results support prioritizing high-risk regions and improving delivery-date estimates, while recognizing that observational data cannot establish that lateness alone causes low reviews.
+An audit of **99,441 Olist orders** identified **96,470 delivered orders with usable delivery dates**, of which **8.11% arrived after the estimated date**. Delivery performance varied substantially by state: **Alagoas (23.93%)**, **Maranhão (19.67%)**, and **Piauí (15.97%)** had especially high late-delivery rates, while **Rio de Janeiro recorded 1,664 late deliveries**. Customer reviews were associated with delivery timeliness: average ratings fell from **4.29/5 for on-time orders** to **3.46/5 for late orders** and **1.79/5 for super-late orders**. The **12.73-day mean absolute delivery-promise error** indicates substantial differences between estimated and actual arrival dates, including early deliveries. These findings support prioritizing high-risk regions, accounting for affected-order volume, and improving delivery-date estimates; the observational data do not establish causation.
 
 ## B. Project Links
 
-> **Action required before submission:** Replace every `ADD_LINK` placeholder with a public URL, then verify all links in an incognito/private browser window.
-
-- **Notebook (Google Colab):** [drive.google.com/file/d/1wN_zBmlE2xxqMkHZcUiA8HZRwouhDKtT/view?usp=sharing](https://drive.google.com/file/d/1wN_zBmlE2xxqMkHZcUiA8HZRwouhDKtT/view?usp=sharing)
-- **Notebook HTML or PDF export:** ADD_LINK_TO_NOTEBOOK_EXPORT
-- **Interactive Streamlit dashboard:** ADD_LINK_TO_STREAMLIT_DASHBOARD
-- **Insight presentation (PDF or PowerPoint):** ADD_LINK_TO_PRESENTATION
-- **Optional two-minute walkthrough:** ADD_LINK_TO_VIDEO (optional; remove this line if not provided)
+- **GitHub repository:** [Amalitech-Data-Engineering-Project-Logistics](https://github.com/TimothyBelekollie/Amalitech-Data-Engineering-Project-Logistics)
+- **Analysis notebook:** [View notebook on Google Drive](https://drive.google.com/file/d/1wN_zBmlE2xxqMkHZcUiA8HZRwouhDKtT/view?usp=sharing)
+- **Notebook PDF export:** [Public link to PDF export](<https://github.com/TimothyBelekollie/Amalitech-Data-Engineering-Project-Logistics/blob/main/TimothyBelekollie_Last_Mile_Logistics_Auditor.ipynb%20-%20Colab.pdf>)
+- **Interactive Streamlit dashboard:** [Last Mile Logistics Auditor](https://tbelekol-logistics.streamlit.app/)
+- **Insight presentation:** [Public link to presentation](https://docs.google.com/presentation/d/1O8Eba6xxv1QdJY8KqF0P_KT05BbH-N0X/edit?usp=sharing&ouid=105877769423016947018&rtpof=true&sd=true)
+- **Insight presentation Recording:** [Public link to presentation ](https://docs.google.com/presentation/d/1O8Eba6xxv1QdJY8KqF0P_KT05BbH-N0X/edit?usp=sharing&ouid=105877769423016947018&rtpof=true&sd=true)
 
 ## C. Technical Explanation
 
 ### Data cleaning and integration
 
-The analysis uses the [Olist Brazilian E-Commerce Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce). Orders were joined to customers using `customer_id`; review records were first aggregated to one row per `order_id` before joining, avoiding unintended one-to-many duplication. Product items were also aggregated to order level for category analysis, and Portuguese product-category names were translated into English. Dates were parsed consistently and the resulting master table was checked for unique order IDs and valid delivery-status assignments. Canceled, unavailable, and other orders without usable delivery timestamps were flagged as **Not Delivered** and excluded from delivered-order lateness calculations rather than treated as on-time deliveries.
+The analysis uses the [Olist Brazilian E-Commerce Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce). Orders were joined to customers using `customer_id`; review records were aggregated to one row per `order_id` before joining to prevent one-to-many row inflation. Product items were aggregated to order level for category analysis, and Portuguese product-category names were translated into English. Delivery timestamps were parsed consistently, and the master table was checked for unique order IDs and valid delivery-status assignments. Orders without usable delivery timestamps were excluded from delivered-order lateness calculations instead of being counted as on time.
 
-For eligible delivered orders, `Days_Difference = order_estimated_delivery_date - order_delivered_customer_date`, expressed in days. Orders were classified as **On Time** (`Days_Difference >= 0`), **Late** (`-5 <= Days_Difference < 0`), or **Super Late** (`Days_Difference < -5`). State-level late-delivery percentages were calculated using delivered orders with valid dates as the denominator. Customer review results describe associations, not causal effects.
+For eligible delivered orders, `Days_Difference = order_estimated_delivery_date - order_delivered_customer_date`, measured in days. The classification is **On Time** (`Days_Difference >= 0`), **Late** (`-5 <= Days_Difference < 0`), and **Super Late** (`Days_Difference < -5`). State late-delivery rates use eligible delivered orders as the denominator. Customer review comparisons are descriptive associations, not causal estimates.
 
 ### Candidate's Choice: Delivery Promise Accuracy
 
-Beyond the required regional and sentiment analyses, the project compares **promised delivery windows** with **actual transit times** and measures the **absolute error between estimated and actual delivery dates**. This matters because a delivery may arrive before its promised date yet still reflect a poorly calibrated estimate; late-delivery rate alone cannot reveal that problem. The observed **12.73-day mean absolute error** motivates better delivery-date forecasting and separate monitoring of early and late estimation errors. The dashboard includes a promised-versus-actual delivery comparison to help identify systematic estimation problems.
+In addition to geographic delay rates and customer sentiment, the project evaluates how closely estimated delivery dates match actual arrivals. The **mean absolute promise error is 12.73 days**, and the **median absolute promise error is 12.17 days**. Absolute error includes both early and late arrivals: **12.73 days does not mean the average order arrived 12.73 days late**. This additional metric matters because late-delivery rates alone cannot identify overly conservative or otherwise poorly calibrated delivery estimates.
 
-### Reproducibility and scope
+## Business Question
 
-- **Data source:** Olist's historical Brazilian e-commerce order, customer, review, item, and product tables.
-- **Analysis unit:** One row per order; regional metrics use delivered orders with valid dates.
-- **Dashboard input:** A derived order-level dataset (`data/audit_master.csv`), not the full raw Olist CSV collection.
-- **Limitations:** Historical observational data, missing delivery/review fields, uneven state-level sample sizes, and no verified distribution-center-distance data. Regional differences should not be interpreted as proof that distance caused delays.
-- **Deployment:** Streamlit Community Cloud; the derived dashboard dataset must be accessible to the deployed app without committing the massive raw source files.
+Are estimated delivery dates reliable? Where are late deliveries concentrated? How is delivery timeliness associated with customer satisfaction?
 
----
+## Dataset and Scope
 
-## Original AmaliTech Project Brief and Requirements
+The project analyzes historical Brazilian e-commerce orders, customers, reviews, items, and products from Olist. The order-level audit preserves **99,441 original orders**, while **96,470** have the delivered status and valid timestamps required for the timing analysis. The dashboard uses processed data rather than the full collection of raw source CSVs.
 
-# Project Brief: The "Last Mile" Logistics Auditor
+## Key Findings
 
-**Client:** Veridi Logistics (Global E-Commerce Aggregator)
-**Deliverable:** Public Dashboard, Code Notebook & Insight Presentation
+| Measure                                    |     Result |
+| ------------------------------------------ | ---------: |
+| Original orders                            |     99,441 |
+| Eligible delivered orders                  |     96,470 |
+| National late-delivery rate                |      8.11% |
+| Super-late rate (more than five days late) |      4.37% |
+| Average delay among late orders            |  9.55 days |
+| Alagoas late-delivery rate                 |     23.93% |
+| Maranhão late-delivery rate               |     19.67% |
+| Piauí late-delivery rate                  |     15.97% |
+| Rio de Janeiro late orders                 |      1,664 |
+| Average review: on time                    |   4.29 / 5 |
+| Average review: late                       |   3.46 / 5 |
+| Average review: super late                 |   1.79 / 5 |
+| Mean absolute delivery-promise error       | 12.73 days |
+| Median absolute delivery-promise error     | 12.17 days |
 
----
+## Interactive Dashboard
 
-## 1. Business Context
+The Streamlit dashboard presents national delivery metrics, state-level performance, review scores by delivery timeliness, delivery promise accuracy, and downloadable summaries. The geographic visualization uses a Brazilian state GeoJSON and state abbreviations to connect each state's metrics to its boundary.
 
-**Veridi Logistics** manages shipping for thousands of online sellers. Recently, the CEO has noticed a spike in negative customer reviews. She has a "gut feeling" that the problem isn't just that packages are late, but that the estimated delivery dates provided to customers are wildly inaccurate (i.e., we are over-promising and under-delivering).
+## Business Recommendations
 
-She needs you to audit the delivery data to find the root cause. She specifically wants to know: **"Are we failing specific regions, or is this a nationwide problem?"**
+1. **Investigate high-rate states** such as Alagoas, Maranhão, and Piauí, while considering sample sizes.
+2. **Consider total customer impact** as well as percentages; higher-volume states can generate more late orders despite lower late rates.
+3. **Improve delivery-date estimates** by analyzing both early and late prediction errors across regions.
+4. **Track customer experience alongside logistics metrics**, using review scores and delay severity together.
 
-Your job is to build a "Delivery Performance" audit tool that connects the dots between **Logistics Data** (when a package arrived) and **Customer Sentiment** (how they rated the experience).
+## Repository Layout
 
-## 2. The Data
+```text
+.
+├── README.md
+├── dashboard.py
+├── requirements.txt
+├── analysis.ipynb
+├── <notebook-export>.pdf
+└── data/
+    ├── audit_master.csv
+    ├── state_summary.csv
+    ├── promise_summary.csv
+    └── brazil_states.geojson
+```
 
-You will use the **Olist E-Commerce Dataset**, a real commercial dataset from a Brazilian marketplace. This is a relational database dump, meaning the data is split across multiple CSV files.
+*The notebook and PDF may have longer descriptive filenames in the actual repository. The tree above illustrates their roles.*
 
-- **Source:** [Kaggle - Olist Brazilian E-Commerce Dataset](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
-- **Key Files to Use:**
-  - `olist_orders_dataset.csv` (The central table)
-  - `olist_order_reviews_dataset.csv` (Sentiment)
-  - `olist_customers_dataset.csv` (Location)
-  - `olist_products_dataset.csv` (Categories)
+## Run the Dashboard Locally
 
-## 3. Tooling Requirements
+```bash
+pip install -r requirements.txt
+streamlit run dashboard.py
+```
 
-You have the flexibility to choose your development environment:
+Run these commands from the repository root. The dashboard's input files must be present in `data/`, and file paths should be relative to the repository rather than to a personal Google Drive or local machine. The analysis notebook may require the original Olist CSV files to regenerate the processed exports; those large raw files are not included in the repository.
 
-- **Option A (Recommended):** Use a cloud-hosted notebook like **Google Colab**, or **Deepnote**, etc.
-- **Option B:** Use a local **Jupyter Notebook** or **VS Code**.
-  - _Condition:_ If you choose this, you must ensure your code is reproducible. Do not reference local file paths (e.g., `C:/Downloads/...`). Assume the dataset is in the same folder as your notebook.
-- **Dashboarding:** The final output must be a **publicly accessible link** (e.g., Tableau Public, Google Looker Studio, Streamlit Cloud, or PowerBI Web, etc.).
+## Limitations
 
----
+This is a historical observational analysis. Missing delivery timestamps or reviews affect the applicable analysis samples; state sample sizes differ; and the available data do not establish the operational causes of regional delays or prove that lateness alone causes negative reviews.
 
-## 4. User Stories & Acceptance Criteria
+## Data Source
 
-### Story 1: The Schema Builder
-
-**As a** Data Engineer,
-**I want** to join the Orders, Reviews, and Customers tables into a single master dataset,
-**So that** I can analyze a customer's location and their review score in the same row.
-
-- **Acceptance Criteria:**
-  - Load the raw CSVs into your notebook.
-  - Perform the correct joins (e.g., join Reviews to Orders on `order_id`, join Customers to Orders on `customer_id`).
-  - **Check:** Ensure you don't accidentally duplicate rows (a common error with 1-to-many joins).
-
-### Story 2: The "Real" Delay Calculator
-
-**As a** Logistics Manager,
-**I want** to know the difference between the "Estimated Delivery Date" and the "Actual Delivery Date,"
-**So that** I can see how often we are lying to customers.
-
-- **Acceptance Criteria:**
-  - Create a new calculated column: `Days_Difference` = `order_estimated_delivery_date` - `order_delivered_customer_date`.
-  - Classify orders into statuses: "On Time", "Late", and "Super Late" (> 5 days late).
-  - Handle missing values: Some orders were never delivered (`order_status` = 'canceled' or 'unavailable'). These should be excluded or flagged separately.
-
-### Story 3: The Geographic Heatmap
-
-**As a** Regional Director,
-**I want** to see which specific States (`customer_state`) have the highest percentage of late deliveries,
-**So that** I can focus my repair efforts on the worst regions.
-
-- **Acceptance Criteria:**
-  - Calculate the % of late orders per State.
-  - Visualize this on a map or a bar chart.
-  - **Insight:** Identify if "Remote" states (far from the distribution center) are disproportionately affected.
-
-### Story 4: The Sentiment Correlation
-
-**As a** Customer Success Lead,
-**I want** to see if late deliveries actually cause bad reviews,
-**So that** I can prove to the CEO that logistics is the problem.
-
-- **Acceptance Criteria:**
-  - Create a visualization comparing "Delivery Delay (Days)" vs "Average Review Score (1-5)".
-  - Show the average review score for "On Time" orders vs. "Late" orders.
-
----
-
-## 5. Bonus User Story: The "Translation" Challenge
-
-**As a** Global Analyst,
-**I want** to see product categories in **English**, not Portuguese,
-**So that** I can understand if "Furniture" is harder to ship than "Electronics".
-
-- **Acceptance Criteria:**
-  - The `product_category_name` is in Portuguese (e.g., `cama_mesa_banho`).
-  - Use the `product_category_name_translation.csv` file included in the dataset (or create your own mapping) to translate these into English for your final dashboard.
-
----
-
-## 6. The "Candidate's Choice" Challenge
-
-**As a** Creative Problem Solver,
-**I want** to include one extra feature or analysis that adds specific business value,
-**So that** I can demonstrate my ability to think beyond the basic requirements.
-
-- **Instructions:**
-  - Add one more metric, chart, or drill-down.
-  - **Requirement:** You must justify _why_ this feature matters to the business in your README.
-
----
-
-## 7. Submission Guidelines
-
-Please edit this `README.md` file in your forked repository to include the following three sections at the top:
-
-### A. The Executive Summary
-
-- A 3-5 sentence summary of your findings.
-
-### B. Project Links
-
-- **Link to Notebook:** (e.g., Google Colab, etc.). _Ensure sharing permissions are set to "Anyone with the link can view"._
-- **Link to Dashboard:** (e.g., Tableau Public, etc.).
-- **Link to Presentation:** A link to a short slide deck (PDF/PPT) AND (Optional) a 2-minute video walkthrough (YouTube) explaining your results.
-
-### C. Technical Explanation
-
-- Briefly explain how you handled the "Data Cleaning".
-- Explain your "Candidate's Choice" addition.
-
-**Important Note on Code Submission:**
-
-- Upload your `.ipynb` notebook file to the repo.
-- **Crucial:** Also upload an **HTML or PDF export** of your notebook so we can see your charts even if GitHub fails to render the notebook code.
-- Once you are ready, please fill out the [Official Submission Form Here](https://forms.cloud.microsoft/e/CeQN2mCyUr) with your links
-
----
-
-## 🛑 CRITICAL: Pre-Submission Checklist
-
-**Before you submit your form, you MUST complete this checklist.**
-
-> ⚠️ **WARNING:** If you miss any of these items, your submission will be flagged as "Incomplete" and you will **NOT** be invited to an interview.
->
-> **We do not accept "permission error" excuses. Test your links in Incognito Mode.**
-
-### 1. Repository & Code Checks
-
-- [ ] **My GitHub Repo is Public.** (Open the link in a Private/Incognito window to verify).
-- [ ] **I have uploaded the `.ipynb` notebook file.**
-- [ ] **I have ALSO uploaded an HTML or PDF export** of the notebook.
-- [ ] **I have NOT uploaded the massive raw dataset.** (Use `.gitignore` or just don't commit the CSV).
-- [ ] **My code uses Relative Paths.**
-
-### 2. Deliverable Checks
-
-- [ ] **My Dashboard link is publicly accessible.** (No login required).
-- [ ] **My Presentation link is publicly accessible.** (Permissions set to "Anyone with the link can view").
-- [ ] **I have updated this `README.md` file** with my Executive Summary and technical notes.
-
-### 3. Completeness
-
-- [ ] I have completed **User Stories 1-4**.
-- [ ] I have completed the **"Candidate's Choice"** challenge and explained it in the README.
-
-**✅ Only when you have checked every box above, proceed to the submission form.**
-
----
+[Olist Brazilian E-Commerce Public Dataset — Kaggle](https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce)
